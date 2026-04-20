@@ -40,6 +40,46 @@ Open `http://localhost:3000`.
 - `npm run start`: run production build
 - `npm run lint`: lint project
 
+## CI/CD (GitHub Actions -> Vercel)
+
+This repository includes a workflow at `.github/workflows/frontend-vercel.yml` that does the following:
+
+- Runs lint + build for changes under `frontend/**`
+- Deploys Preview to Vercel on pull requests
+- Deploys Production to Vercel on push to `main` or `master`
+
+### Required GitHub repository secrets
+
+Add these secrets in GitHub: `Settings -> Secrets and variables -> Actions`:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+### How to get the values
+
+1. Install and login to Vercel CLI locally:
+
+```bash
+npm i -g vercel
+vercel login
+```
+
+2. From the `frontend` folder, link the project once:
+
+```bash
+vercel link
+```
+
+3. Read values from `.vercel/project.json`:
+
+- `orgId` -> `VERCEL_ORG_ID`
+- `projectId` -> `VERCEL_PROJECT_ID`
+
+4. Create `VERCEL_TOKEN` from Vercel dashboard:
+
+- Vercel -> Settings -> Tokens -> Create Token
+
 ## Auth Behavior
 
 - App bootstraps user via `GET /auth/me`

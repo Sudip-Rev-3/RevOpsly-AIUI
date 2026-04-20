@@ -80,12 +80,20 @@ export function GmailInlinePanel() {
         if (!prompt || processing) return
 
         const currentSessionId = activeSession?.id ?? null
-        await sendMessage(prompt)
-
         if (currentSessionId) {
             setComposerBySession((prev) => ({ ...prev, [currentSessionId]: "" }))
         } else {
             setDraftNoSession("")
+        }
+
+        try {
+            await sendMessage(prompt)
+        } catch {
+            if (currentSessionId) {
+                setComposerBySession((prev) => ({ ...prev, [currentSessionId]: prompt }))
+            } else {
+                setDraftNoSession(prompt)
+            }
         }
     }
 

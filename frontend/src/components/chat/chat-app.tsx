@@ -218,6 +218,8 @@ const HERO_CARDS = [
     },
 ] as const
 
+const BRAND_URL = "https://rev-opsly-aiui.vercel.app"
+
 function formatFileSize(size: number) {
     if (size < 1024) return `${size} B`
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
@@ -981,10 +983,16 @@ export function ChatApp() {
     }
 
     async function submitMessage(text: string) {
-        if (!text.trim()) return
+        const prompt = text.trim()
+        if (!prompt) return
         const sendKey = activeComposerKey
-        await sendMessage(text)
         setComposerValue("", sendKey)
+        try {
+            await sendMessage(prompt)
+        } catch {
+            // Restore the draft if sending fails so the user can retry quickly.
+            setComposerValue(prompt, sendKey)
+        }
     }
 
     async function onDrop(event: React.DragEvent<HTMLElement>) {
@@ -1278,9 +1286,25 @@ export function ChatApp() {
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        <p className="text-base font-semibold tracking-tight">
-                            {activeWorkspace === "chat" ? "RevOpsly" : "RevOpsly · Google Workspace"}
-                        </p>
+                        <img
+                            src="/revopsly-logo.svg"
+                            alt="RevOpsly logo"
+                            className="h-6 w-auto"
+                        />
+                        <div className="leading-tight">
+                            <p className="text-xs font-semibold text-foreground">RevOpsly</p>
+                            <a
+                                href={BRAND_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                            >
+                                rev-opsly-aiui.vercel.app
+                            </a>
+                            {activeWorkspace === "gworkspace" ? (
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Google Workspace</p>
+                            ) : null}
+                        </div>
                     </div>
 
                     <div className="ml-auto flex items-center gap-2">
