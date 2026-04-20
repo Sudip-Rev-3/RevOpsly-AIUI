@@ -1285,27 +1285,20 @@ export function ChatApp() {
                         {desktopSidebarOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
                     </Button>
 
-                    <div className="flex items-center gap-2">
+                    <a
+                        href={BRAND_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center rounded-md border border-border bg-white px-2 py-1"
+                        aria-label="Open RevOpsly website"
+                        title="RevOpsly"
+                    >
                         <img
                             src="/revopsly-logo.svg"
                             alt="RevOpsly logo"
                             className="h-6 w-auto"
                         />
-                        <div className="leading-tight">
-                            <p className="text-xs font-semibold text-foreground">RevOpsly</p>
-                            <a
-                                href={BRAND_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                            >
-                                rev-opsly-aiui.vercel.app
-                            </a>
-                            {activeWorkspace === "gworkspace" ? (
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Google Workspace</p>
-                            ) : null}
-                        </div>
-                    </div>
+                    </a>
 
                     <div className="ml-auto flex items-center gap-2">
                         {activeWorkspace === "gworkspace" ? (

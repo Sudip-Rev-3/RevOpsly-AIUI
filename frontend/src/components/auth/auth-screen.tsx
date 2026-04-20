@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import { getGoogleAuthStartUrl } from "@/lib/services/chat-service"
 import { useAuthStore } from "@/store/auth-store"
 
-const BRAND_URL = "https://rev-opsly-aiui.vercel.app"
-
 export function AuthScreen() {
     const { signup, login, loading, error, clearError } = useAuthStore()
     const [mode, setMode] = useState<"login" | "signup">("login")
@@ -60,22 +58,15 @@ export function AuthScreen() {
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_20%_20%,hsl(var(--primary)/0.2),transparent_45%),radial-gradient(circle_at_80%_80%,hsl(var(--primary)/0.12),transparent_42%),hsl(var(--background))] p-4">
             <Card className="w-full max-w-md border shadow-xl">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="flex items-center gap-2 text-2xl tracking-tight">
-                        <img
-                            src="/revopsly-logo.svg"
-                            alt="RevOpsly logo"
-                            className="h-7 w-auto"
-                        />
-                        <span>RevOpsly</span>
+                    <CardTitle className="text-2xl tracking-tight">
+                        <span className="inline-flex items-center rounded-md border border-border bg-white px-2 py-1">
+                            <img
+                                src="/revopsly-logo.svg"
+                                alt="RevOpsly logo"
+                                className="h-7 w-auto"
+                            />
+                        </span>
                     </CardTitle>
-                    <a
-                        href={BRAND_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                    >
-                        rev-opsly-aiui.vercel.app
-                    </a>
                     <CardDescription>
                         {isSignup ? "Create your account to start chatting." : "Log in to continue your workspace."}
                     </CardDescription>
