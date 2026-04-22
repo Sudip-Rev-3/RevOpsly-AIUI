@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Google logo">
+  <defs>
+    <clipPath id="ring">
+      <path d="M128 26a102 102 0 1 0 0 204a102 102 0 1 0 0-204zm0 38a64 64 0 1 1 0 128a64 64 0 1 1 0-128z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#ring)">
+    <path d="M0 0h256v128H0z" fill="#EA4335"/>
+    <path d="M0 128h128v128H0z" fill="#34A853"/>
+    <path d="M128 128h128v128H128z" fill="#4285F4"/>
+    <path d="M0 86l86 42V44z" fill="#FBBC05"/>
+  </g>
+  <rect x="124" y="110" width="106" height="36" rx="10" fill="#4285F4"/>
+</svg>

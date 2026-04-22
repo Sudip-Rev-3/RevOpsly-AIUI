@@ -28,7 +28,6 @@ import {
     LogOut,
     Menu,
     MessageSquarePlus,
-    Mail,
     PanelRight,
     Search,
     SendHorizontal,
@@ -1029,17 +1028,17 @@ export function ChatApp() {
     function renderGmailSessionActions(session: GmailSession) {
         return (
             <DropdownMenu>
-                <DropdownMenuTrigger render={<Button size="icon-xs" variant="ghost" aria-label="Google Workspace session actions"><Settings2 className="size-3" /></Button>} />
+                <DropdownMenuTrigger render={<Button size="icon-xs" variant="ghost" aria-label="Google session actions"><Settings2 className="size-3" /></Button>} />
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => {
-                        const value = window.prompt("Rename Google Workspace session", session.title)
+                        const value = window.prompt("Rename Google session", session.title)
                         if (value) renameGmailSession(session.id, value)
                     }}>
                         Rename
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem variant="destructive" onClick={() => {
-                        if (window.confirm("Delete this Google Workspace session permanently?")) {
+                        if (window.confirm("Delete this Google session permanently?")) {
                             deleteGmailSession(session.id)
                         }
                     }}>
@@ -1064,7 +1063,7 @@ export function ChatApp() {
                     }}
                 >
                     <MessageSquarePlus className="size-4" />
-                    {activeWorkspace === "chat" ? "New chat" : "New Google Workspace chat"}
+                    {activeWorkspace === "chat" ? "New chat" : "New Google chat"}
                 </Button>
             </div>
 
@@ -1086,8 +1085,8 @@ export function ChatApp() {
                         className="justify-center gap-1.5"
                         onClick={() => setActiveWorkspace("gworkspace")}
                     >
-                        <Mail className="size-3.5" />
-                        Google Workspace
+                        <img src="/google-logo.svg" alt="Google" className="h-3.5 w-3.5" />
+                        Google
                     </Button>
                 </div>
             </div>
@@ -1096,7 +1095,7 @@ export function ChatApp() {
                 <div className="relative">
                     <Search className="pointer-events-none absolute left-2 top-2.5 size-4 text-muted-foreground" />
                     <Input
-                        placeholder={activeWorkspace === "chat" ? "Search conversations" : "Search Google Workspace sessions"}
+                        placeholder={activeWorkspace === "chat" ? "Search conversations" : "Search Google sessions"}
                         value={activeWorkspace === "chat" ? searchTerm : gmailSearchTerm}
                         onChange={(event) => {
                             if (activeWorkspace === "chat") {
@@ -1175,7 +1174,7 @@ export function ChatApp() {
                         ))}
 
                         {visibleGmailSessions.length === 0 ? (
-                            <p className="px-2 text-xs text-muted-foreground">No Google Workspace sessions yet. Start a new workspace chat to begin.</p>
+                            <p className="px-2 text-xs text-muted-foreground">No Google sessions yet. Start a new Google chat to begin.</p>
                         ) : null}
                     </>
                 )}
@@ -1269,7 +1268,7 @@ export function ChatApp() {
                         <SheetContent side="left" className="p-0">
                             <SheetHeader>
                                 <SheetTitle>Workspace</SheetTitle>
-                                <SheetDescription>Switch between conversation and Google Workspace sessions.</SheetDescription>
+                                <SheetDescription>Switch between conversation and Google sessions.</SheetDescription>
                             </SheetHeader>
                             {sidebarContent}
                         </SheetContent>

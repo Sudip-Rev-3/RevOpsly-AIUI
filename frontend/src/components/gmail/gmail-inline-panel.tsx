@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Mail, Send } from "lucide-react"
+import { Loader2, Send } from "lucide-react"
 
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { getGoogleWorkspaceAuthStartUrl, getGoogleWorkspaceStatusApi } from "@/lib/services/chat-service"
+import { disconnectGoogleWorkspaceApi, getGoogleWorkspaceAuthStartUrl, getGoogleWorkspaceStatusApi } from "@/lib/services/chat-service"
 import { cn } from "@/lib/utils"
 import { useGmailStore } from "@/store/gmail-store"
 
@@ -22,6 +22,9 @@ export function GmailInlinePanel() {
     const [authChecking, setAuthChecking] = useState(true)
     const [authError, setAuthError] = useState<string | null>(null)
     const [missingScopes, setMissingScopes] = useState<string[]>([])
+    const [workspaceEmail, setWorkspaceEmail] = useState<string | null>(null)
+    const [disconnecting, setDisconnecting] = useState(false)
+    const [disconnected, setDisconnected] = useState(false)
     const endRef = useRef<HTMLDivElement | null>(null)
 
     const activeSession = useMemo(
@@ -42,6 +45,8 @@ export function GmailInlinePanel() {
         setAuthChecking(true)
         setAuthError(null)
         setMissingScopes([])
+        setWorkspaceEmail(null)
+        setDisconnected(false)
 
         const ensureConnected = async () => {
             try {
@@ -52,6 +57,7 @@ export function GmailInlinePanel() {
                     return
                 }
                 setMissingScopes(Array.isArray(status.missing_scopes) ? status.missing_scopes : [])
+                setWorkspaceEmail(typeof status.account_email === "string" ? status.account_email : null)
                 setAuthChecking(false)
             } catch (error) {
                 if (cancelled) return
@@ -97,6 +103,24 @@ export function GmailInlinePanel() {
         }
     }
 
+    const disconnectWorkspace = async () => {
+        if (disconnecting) return
+        setDisconnecting(true)
+        setAuthError(null)
+
+        try {
+            await disconnectGoogleWorkspaceApi()
+            setDisconnected(true)
+            setWorkspaceEmail(null)
+            setMissingScopes([])
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unable to disconnect Google account."
+            setAuthError(message)
+        } finally {
+            setDisconnecting(false)
+        }
+    }
+
     if (!hydrated) {
         return (
             <section className="flex h-full w-full items-center justify-center rounded-2xl border border-border bg-card text-sm text-muted-foreground">
@@ -130,11 +154,53 @@ export function GmailInlinePanel() {
         )
     }
 
+    if (disconnected) {
+        return (
+            <section className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-6 text-center text-sm">
+                <img src="/google-logo.svg" alt="Google" className="h-10 w-10" />
+                <p className="font-medium text-foreground">Google account disconnected.</p>
+                <p className="text-muted-foreground">Connect again when you want to use Gmail, Drive, and Calendar tools.</p>
+                <button
+                    type="button"
+                    className="rounded bg-amber-200/70 px-3 py-1.5 font-semibold text-amber-900 underline underline-offset-2 hover:bg-amber-200"
+                    onClick={() => {
+                        window.location.assign(getGoogleWorkspaceAuthStartUrl(true))
+                    }}
+                >
+                    Connect Google
+                </button>
+            </section>
+        )
+    }
+
     return (
         <section className="relative flex h-full w-full min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-border bg-card">
-            <header className="flex items-center gap-2 border-b border-border px-5 py-3">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-sm font-semibold text-foreground">Google Workspace Assistant</h2>
+            <header className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
+                <div className="inline-flex items-center gap-2">
+                    <img src="/google-logo.svg" alt="Google" className="h-6 w-6" />
+                    <div>
+                        <h2 className="text-sm font-semibold text-foreground">Google Copilot</h2>
+                        <p className="text-[11px] text-muted-foreground">Gmail, Calendar, and Drive in one flow</p>
+                    </div>
+                </div>
+                <div className="ml-auto inline-flex items-center gap-2">
+                    {workspaceEmail ? (
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                            {workspaceEmail}
+                        </span>
+                    ) : null}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void disconnectWorkspace()}
+                        disabled={disconnecting}
+                        className="h-8"
+                    >
+                        {disconnecting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                        Disconnect
+                    </Button>
+                </div>
             </header>
 
             {missingScopes.length > 0 ? (
