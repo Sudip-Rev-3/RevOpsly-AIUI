@@ -11,6 +11,11 @@ export interface ApiAuthUser {
     email: string
     display_name: string
     two_factor_enabled: boolean
+    is_admin?: boolean
+    access_approved?: boolean
+    access_requested_at?: string | null
+    access_approved_at?: string | null
+    access_disabled_at?: string | null
 }
 
 interface ApiAuthResponse {
@@ -103,6 +108,10 @@ export interface GoogleWorkspaceStatusResponse {
     updated_at?: string | null
 }
 
+export interface SlackAuthStatusResponse {
+    connected: boolean
+}
+
 export const defaultSettings: AppSettings = {
     theme: "system",
     accentColor: "slate",
@@ -148,6 +157,10 @@ export function getGoogleWorkspaceAuthStartUrl(forceConsent = false) {
     return forceConsent
         ? `${API_BASE_URL}/auth/google-workspace/start?force_consent=true`
         : `${API_BASE_URL}/auth/google-workspace/start`
+}
+
+export function getSlackAuthStartUrl() {
+    return `${API_BASE_URL}/auth/slack/start`
 }
 
 function stateStorageKey(workspaceUserId: number | null) {
@@ -303,6 +316,14 @@ export async function disconnectGoogleWorkspaceApi() {
     return apiRequest<{ status: string }>("/auth/google-workspace/disconnect", { method: "POST" })
 }
 
+export async function getSlackAuthStatusApi() {
+    return apiRequest<SlackAuthStatusResponse>("/auth/slack/status", { method: "GET" })
+}
+
+export async function disconnectSlackApi() {
+    return apiRequest<{ status: string }>("/auth/slack/disconnect", { method: "POST" })
+}
+
 export async function submitFeedbackApi(payload: {
     message_key: string
     feedback: "up" | "down"
@@ -340,6 +361,67 @@ export async function updateTwoFactorApi(enabled: boolean) {
 export async function refreshActiveSessionsApi() {
     const response = await apiRequest<{ active_sessions: number }>("/auth/active-sessions", { method: "GET" })
     return Number(response.active_sessions || 1)
+}
+
+export async function requestAccessApi() {
+    return apiRequest<{ status: string; requested_at: string }>("/auth/request-access", {
+        method: "POST",
+        body: JSON.stringify({}),
+    })
+}
+
+export async function getAccessRequestsApi() {
+    return apiRequest<{
+        requests: Array<{
+            id: number
+            email: string
+            display_name: string
+            access_requested_at: string | null
+            is_admin: boolean
+        }>
+    }>("/admin/access-requests", { method: "GET" })
+}
+
+export async function approveAccessApi(userId: number, approved: boolean) {
+    return apiRequest<{ status: string; user_id: number; approved_at?: string }>("/admin/approve-access", {
+        method: "POST",
+        body: JSON.stringify({ user_id: userId, approved }),
+    })
+}
+
+export async function getAllUsersApi() {
+    return apiRequest<{
+        users: Array<{
+            id: number
+            email: string
+            display_name: string
+            is_admin: boolean
+            access_approved: boolean
+            access_requested_at: string | null
+            access_approved_at: string | null
+            access_disabled_at: string | null
+            created_at: string
+        }>
+    }>("/admin/users", { method: "GET" })
+}
+
+export async function setAdminRoleApi(userId: number, isAdmin: boolean) {
+    return apiRequest<{ status: string; user_id: number; is_admin: boolean }>(`/admin/users/${userId}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_admin: isAdmin }),
+    })
+}
+
+export async function stopUserAccessApi(userId: number) {
+    return apiRequest<{ status: string; user_id: number; access_disabled_at?: string }>(`/admin/users/${userId}/stop-access`, {
+        method: "POST",
+    })
+}
+
+export async function deleteUserApi(userId: number) {
+    return apiRequest<{ status: string; user_id: number }>(`/admin/users/${userId}`, {
+        method: "DELETE",
+    })
 }
 
 export async function signOutAllSessionsApi() {

@@ -7,6 +7,7 @@ import { AUTH_EXPIRED_EVENT } from "@/lib/services/chat-service"
 import { useAuthStore } from "@/store/auth-store"
 import { useChatStore } from "@/store/chat-store"
 import { AuthScreen } from "@/components/auth/auth-screen"
+import { AccessPendingScreen } from "@/components/auth/access-pending-screen"
 
 export function AuthGate() {
     const { initialize, initialized, loading, isAuthenticated, user, handleAuthExpired } = useAuthStore()
@@ -47,6 +48,11 @@ export function AuthGate() {
 
     if (!isAuthenticated) {
         return <AuthScreen />
+    }
+
+    // Check if user has access approved
+    if (!user?.access_approved) {
+        return <AccessPendingScreen user={user} />
     }
 
     return <ChatApp />

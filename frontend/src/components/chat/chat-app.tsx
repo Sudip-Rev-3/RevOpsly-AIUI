@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { usePathname, useRouter } from "next/navigation"
 import {
     ArrowDown,
     ArrowUp,
@@ -45,6 +46,8 @@ import {
 
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer"
 import { GmailInlinePanel } from "@/components/gmail/gmail-inline-panel"
+import { SlackInlinePanel } from "@/components/slack/slack-inline-panel"
+import { AdminPanel } from "@/components/admin/admin-panel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -88,6 +91,7 @@ import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/store/auth-store"
 import { useChatStore } from "@/store/chat-store"
 import { useGmailStore, type GmailSession } from "@/store/gmail-store"
+import { useSlackStore, type SlackSession } from "@/store/slack-store"
 import type { AppSettings, ChatAttachment, ChatMessage, Conversation } from "@/types/chat"
 
 const settingsSchema = z.object({
@@ -127,8 +131,33 @@ type SettingsTab =
     | "data-controls"
     | "security"
     | "account"
+    | "admin"
+
+type WorkspaceTab = "chat" | "gworkspace" | "slack"
 
 const NEW_CHAT_DRAFT_KEY = "__new_chat__"
+const ACTIVE_WORKSPACE_STORAGE_KEY = "revopsly:active-workspace:v1"
+
+function workspaceFromPathname(pathname: string | null): WorkspaceTab {
+    if (pathname?.startsWith("/slack")) return "slack"
+    if (pathname?.startsWith("/google-workspace")) return "gworkspace"
+    return "chat"
+}
+
+function pathFromWorkspace(workspace: WorkspaceTab): string {
+    if (workspace === "slack") return "/slack"
+    if (workspace === "gworkspace") return "/google-workspace"
+    return "/"
+}
+
+function readStoredWorkspace(): WorkspaceTab {
+    if (typeof window === "undefined") return "chat"
+    const raw = window.localStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY)
+    if (raw === "chat" || raw === "gworkspace" || raw === "slack") {
+        return raw
+    }
+    return "chat"
+}
 
 const STREAMING_THINKING_STEPS = [
     "Invoking agent…",
@@ -706,6 +735,8 @@ function MessageRow({
 }
 
 export function ChatApp() {
+    const router = useRouter()
+    const pathname = usePathname()
     const { user, logout } = useAuthStore()
     const {
         hydrated,
@@ -758,9 +789,18 @@ export function ChatApp() {
     const renameGmailSession = useGmailStore((state) => state.renameSession)
     const deleteGmailSession = useGmailStore((state) => state.deleteSession)
 
+    const slackSessions = useSlackStore((state) => state.sessions)
+    const activeSlackSessionId = useSlackStore((state) => state.activeSessionId)
+    const initializeSlackStore = useSlackStore((state) => state.initialize)
+    const setActiveSlackSession = useSlackStore((state) => state.setActiveSession)
+    const createSlackSession = useSlackStore((state) => state.createSession)
+    const renameSlackSession = useSlackStore((state) => state.renameSession)
+    const deleteSlackSession = useSlackStore((state) => state.deleteSession)
+
     const [composerBySession, setComposerBySession] = useState<Record<string, string>>({})
-    const [activeWorkspace, setActiveWorkspace] = useState<"chat" | "gworkspace">("chat")
+    const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceTab>(() => readStoredWorkspace())
     const [gmailSearchTerm, setGmailSearchTerm] = useState("")
+    const [slackSearchTerm, setSlackSearchTerm] = useState("")
     const [dropActive, setDropActive] = useState(false)
     const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(false)
     const [settingsTab, setSettingsTab] = useState<SettingsTab>("general")
@@ -837,6 +877,18 @@ export function ChatApp() {
         return filtered
     }, [gmailSearchTerm, gmailSessions])
 
+    const visibleSlackSessions = useMemo(() => {
+        const filtered = slackSessions
+            .filter((session) => {
+                if (!slackSearchTerm.trim()) return true
+                const q = slackSearchTerm.toLowerCase()
+                return session.title.toLowerCase().includes(q)
+            })
+            .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+
+        return filtered
+    }, [slackSearchTerm, slackSessions])
+
     const profileDisplayName = user?.display_name ?? settings.account.displayName
     const profileEmail = user?.email ?? settings.account.email
     const profilePlanLabel = settings.account.plan
@@ -863,6 +915,35 @@ export function ChatApp() {
     useEffect(() => {
         void initializeGmailStore(user?.id ?? null)
     }, [initializeGmailStore, user?.id])
+
+    useEffect(() => {
+        void initializeSlackStore(user?.id ?? null)
+    }, [initializeSlackStore, user?.id])
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        window.localStorage.setItem(ACTIVE_WORKSPACE_STORAGE_KEY, activeWorkspace)
+    }, [activeWorkspace])
+
+    useEffect(() => {
+        const targetPath = pathFromWorkspace(activeWorkspace)
+        if (pathname !== targetPath) {
+            router.replace(targetPath)
+        }
+    }, [activeWorkspace, pathname, router])
+
+    useEffect(() => {
+        const workspaceFromPath = workspaceFromPathname(pathname)
+        setActiveWorkspace((current) => (current === workspaceFromPath ? current : workspaceFromPath))
+    }, [pathname])
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const params = new URLSearchParams(window.location.search)
+        if (params.has("slack_connected") || params.has("slack_error")) {
+            setActiveWorkspace("slack")
+        }
+    }, [])
 
     useEffect(() => {
         const hadUploadedData = prevHasUploadedDataRef.current
@@ -1049,6 +1130,30 @@ export function ChatApp() {
         )
     }
 
+    function renderSlackSessionActions(session: SlackSession) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger render={<Button size="icon-xs" variant="ghost" aria-label="Slack session actions"><Settings2 className="size-3" /></Button>} />
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => {
+                        const value = window.prompt("Rename Slack session", session.title)
+                        if (value) renameSlackSession(session.id, value)
+                    }}>
+                        Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={() => {
+                        if (window.confirm("Delete this Slack session permanently?")) {
+                            deleteSlackSession(session.id)
+                        }
+                    }}>
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        )
+    }
+
     const sidebarContent = (
         <div className="flex h-full flex-col border-r bg-card/70 backdrop-blur">
             <div className="p-3">
@@ -1059,16 +1164,22 @@ export function ChatApp() {
                             startFreshChat()
                             return
                         }
-                        createGmailSession()
+                        if (activeWorkspace === "gworkspace") {
+                            createGmailSession()
+                            return
+                        }
+                        if (activeWorkspace === "slack") {
+                            createSlackSession()
+                        }
                     }}
                 >
                     <MessageSquarePlus className="size-4" />
-                    {activeWorkspace === "chat" ? "New chat" : "New Google chat"}
+                    {activeWorkspace === "chat" ? "New chat" : activeWorkspace === "gworkspace" ? "New Google chat" : "New Slack chat"}
                 </Button>
             </div>
 
             <div className="px-3 pb-3">
-                <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/60 p-1">
+                <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/60 p-1">
                     <Button
                         type="button"
                         size="sm"
@@ -1088,6 +1199,16 @@ export function ChatApp() {
                         <img src="/google-logo.svg" alt="Google" className="h-3.5 w-3.5" />
                         Google
                     </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant={activeWorkspace === "slack" ? "secondary" : "ghost"}
+                        className="justify-center gap-1.5"
+                        onClick={() => setActiveWorkspace("slack")}
+                        title="Slack Workspace"
+                    >
+                        <img src="/slack-logo.png" alt="Slack" className="h-3.5 w-3.5" />
+                    </Button>
                 </div>
             </div>
 
@@ -1095,33 +1216,22 @@ export function ChatApp() {
                 <div className="relative">
                     <Search className="pointer-events-none absolute left-2 top-2.5 size-4 text-muted-foreground" />
                     <Input
-                        placeholder={activeWorkspace === "chat" ? "Search conversations" : "Search Google sessions"}
-                        value={activeWorkspace === "chat" ? searchTerm : gmailSearchTerm}
+                        placeholder={activeWorkspace === "chat" ? "Search conversations" : activeWorkspace === "gworkspace" ? "Search Google sessions" : "Search Slack sessions"}
+                        value={activeWorkspace === "chat" ? searchTerm : activeWorkspace === "gworkspace" ? gmailSearchTerm : slackSearchTerm}
                         onChange={(event) => {
                             if (activeWorkspace === "chat") {
                                 setSearchTerm(event.target.value)
                                 return
                             }
-                            setGmailSearchTerm(event.target.value)
+                            if (activeWorkspace === "gworkspace") {
+                                setGmailSearchTerm(event.target.value)
+                                return
+                            }
+                            setSlackSearchTerm(event.target.value)
                         }}
                         className="pl-8"
                     />
                 </div>
-            </div>
-
-            <div className="px-3 pb-3">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-between border-primary/30 bg-primary/5 hover:bg-primary/10"
-                    onClick={() => window.open("/slack", "_blank", "noopener,noreferrer")}
-                >
-                    <span className="inline-flex items-center gap-2">
-                        <Hash className="size-4" />
-                        Slack
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">New tab</span>
-                </Button>
             </div>
 
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 pb-4">
@@ -1151,7 +1261,7 @@ export function ChatApp() {
                             <p className="px-2 text-xs text-muted-foreground">No conversations yet. Start a new chat to begin.</p>
                         ) : null}
                     </>
-                ) : (
+                ) : activeWorkspace === "gworkspace" ? (
                     <>
                         {visibleGmailSessions.map((session) => (
                             <div
@@ -1175,6 +1285,32 @@ export function ChatApp() {
 
                         {visibleGmailSessions.length === 0 ? (
                             <p className="px-2 text-xs text-muted-foreground">No Google sessions yet. Start a new Google chat to begin.</p>
+                        ) : null}
+                    </>
+                ) : (
+                    <>
+                        {visibleSlackSessions.map((session) => (
+                            <div
+                                key={session.id}
+                                className={cn(
+                                    "group flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm hover:bg-muted",
+                                    activeSlackSessionId === session.id && "bg-muted"
+                                )}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveSlackSession(session.id)}
+                                    className="min-w-0 flex-1 text-left"
+                                >
+                                    <p className="truncate font-medium">{session.title}</p>
+                                    <p className="truncate text-xs text-muted-foreground">{format(new Date(session.updatedAt), "MMM d, p")}</p>
+                                </button>
+                                {renderSlackSessionActions(session)}
+                            </div>
+                        ))}
+
+                        {visibleSlackSessions.length === 0 ? (
+                            <p className="px-2 text-xs text-muted-foreground">No Slack sessions yet. Start a new Slack chat to begin.</p>
                         ) : null}
                     </>
                 )}
@@ -1268,7 +1404,7 @@ export function ChatApp() {
                         <SheetContent side="left" className="p-0">
                             <SheetHeader>
                                 <SheetTitle>Workspace</SheetTitle>
-                                <SheetDescription>Switch between conversation and Google sessions.</SheetDescription>
+                                <SheetDescription>Switch between conversation, Google, and Slack sessions.</SheetDescription>
                             </SheetHeader>
                             {sidebarContent}
                         </SheetContent>
@@ -1578,9 +1714,13 @@ export function ChatApp() {
                             ) : null}
                         </AnimatePresence>
                             </>
-                        ) : (
+                        ) : activeWorkspace === "gworkspace" ? (
                             <section className="flex min-w-0 flex-1 flex-col p-4 sm:p-6">
                                 <GmailInlinePanel />
+                            </section>
+                        ) : (
+                            <section className="flex min-w-0 flex-1 flex-col p-4 sm:p-6">
+                                <SlackInlinePanel />
                             </section>
                         )}
                     </div>
@@ -1637,6 +1777,9 @@ export function ChatApp() {
                                     <TabsTrigger value="data-controls" className="h-9 justify-start gap-2 px-3"><Database className="size-4" />Data controls</TabsTrigger>
                                     <TabsTrigger value="security" className="h-9 justify-start gap-2 px-3"><ShieldCheck className="size-4" />Security</TabsTrigger>
                                     <TabsTrigger value="account" className="h-9 justify-start gap-2 px-3"><UserCircle2 className="size-4" />Account</TabsTrigger>
+                                    {user?.is_admin && (
+                                        <TabsTrigger value="admin" className="h-9 justify-start gap-2 px-3"><ShieldCheck className="size-4" />Admin</TabsTrigger>
+                                    )}
                                 </TabsList>
                             </aside>
 
@@ -2057,6 +2200,12 @@ export function ChatApp() {
                                         </Button>
                                     </div>
                                 </TabsContent>
+
+                                {user?.is_admin && (
+                                    <TabsContent value="admin" className="space-y-4">
+                                        <AdminPanel user={user} />
+                                    </TabsContent>
+                                )}
                             </section>
                         </Tabs>
 

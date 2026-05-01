@@ -3,7 +3,7 @@
 import { create } from "zustand"
 
 import type { ApiAuthUser } from "@/lib/services/chat-service"
-import { loginApi, logoutApi, meApi, refreshSessionApi, signupApi } from "@/lib/services/chat-service"
+import { loginApi, logoutApi, meApi, refreshSessionApi, signupApi, requestAccessApi } from "@/lib/services/chat-service"
 
 interface AuthStore {
     user: ApiAuthUser | null
@@ -18,6 +18,8 @@ interface AuthStore {
     setUser: (user: ApiAuthUser) => void
     handleAuthExpired: () => void
     clearError: () => void
+    requestAccess: () => Promise<void>
+    refreshUser: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -73,6 +75,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 initialized: true,
                 error: null,
             })
+            // After creating account, automatically request access so admins see it
+            try {
+                await get().requestAccess()
+            } catch {
+                // ignore request-access errors; user already created
+            }
         } catch (error) {
             set({
                 loading: false,
@@ -132,4 +140,38 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     },
 
     clearError: () => set({ error: null }),
+
+    requestAccess: async () => {
+        set({ loading: true, error: null })
+        try {
+            await requestAccessApi()
+            // After requesting access, refresh user to get updated status
+            const payload = await meApi()
+            set({
+                user: payload.user,
+                loading: false,
+                error: null,
+            })
+        } catch (error) {
+            set({
+                loading: false,
+                error: error instanceof Error ? error.message : "Unable to request access right now.",
+            })
+            throw error
+        }
+    },
+
+    refreshUser: async () => {
+        try {
+            const payload = await meApi()
+            set({
+                user: payload.user,
+                isAuthenticated: true,
+                error: null,
+            })
+        } catch {
+            // If refresh fails, stay authenticated but flag might be stale
+            // This is acceptable as a non-critical UI update
+        }
+    },
 }))
