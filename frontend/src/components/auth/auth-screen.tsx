@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,12 +60,10 @@ export function AuthScreen() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl tracking-tight">
                         <span className="inline-flex items-center rounded-md border border-border bg-white px-2 py-1">
-                            <Image
+                            <img
                                 src="/revopsly-logo.svg"
                                 alt="RevOpsly logo"
-                                width={28}
-                                height={28}
-                                className="w-auto"
+                                className="h-7 w-auto"
                             />
                         </span>
                     </CardTitle>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import Image from "next/image"
 import { Loader2, Send } from "lucide-react"
 
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer"
@@ -158,7 +157,7 @@ export function GmailInlinePanel() {
     if (disconnected) {
         return (
             <section className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-6 text-center text-sm">
-                <Image src="/google-logo.svg" alt="Google" width={40} height={40} />
+                <img src="/google-logo.svg" alt="Google" className="h-10 w-10" />
                 <p className="font-medium text-foreground">Google account disconnected.</p>
                 <p className="text-muted-foreground">Connect again when you want to use Gmail, Drive, and Calendar tools.</p>
                 <button
@@ -178,7 +177,7 @@ export function GmailInlinePanel() {
         <section className="relative flex h-full w-full min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-border bg-card">
             <header className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
                 <div className="inline-flex items-center gap-2">
-                    <Image src="/google-logo.svg" alt="Google" width={24} height={24} />
+                    <img src="/google-logo.svg" alt="Google" className="h-6 w-6" />
                     <div>
                         <h2 className="text-sm font-semibold text-foreground">Google Copilot</h2>
                         <p className="text-[11px] text-muted-foreground">Gmail, Calendar, and Drive in one flow</p>
