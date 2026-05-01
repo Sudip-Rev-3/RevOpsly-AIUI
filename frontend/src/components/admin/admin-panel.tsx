@@ -66,26 +66,25 @@ export function AdminPanel({ user }: AdminPanelProps) {
     const [refreshing, setRefreshing] = useState(false)
 
     useEffect(() => {
-        void loadActiveTabData()
-    }, [activeTab, loadActiveTabData])
-
-    async function loadActiveTabData() {
-        setLoading(true)
-        setError(null)
-        try {
-            if (activeTab === "requests") {
-                const response = await getAccessRequestsApi()
-                setRequests(response.requests)
-            } else {
-                const response = await getAllUsersApi()
-                setUsers(response.users)
+        const loadActiveTabData = async () => {
+            setLoading(true)
+            setError(null)
+            try {
+                if (activeTab === "requests") {
+                    const response = await getAccessRequestsApi()
+                    setRequests(response.requests)
+                } else {
+                    const response = await getAllUsersApi()
+                    setUsers(response.users)
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to load data")
+            } finally {
+                setLoading(false)
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load data")
-        } finally {
-            setLoading(false)
         }
-    }
+        void loadActiveTabData()
+    }, [activeTab])
 
     async function reloadRequests() {
         const response = await getAccessRequestsApi()
