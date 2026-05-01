@@ -67,7 +67,7 @@ export function AdminPanel({ user }: AdminPanelProps) {
 
     useEffect(() => {
         void loadActiveTabData()
-    }, [activeTab])
+    }, [activeTab, loadActiveTabData])
 
     async function loadActiveTabData() {
         setLoading(true)
@@ -84,16 +84,6 @@ export function AdminPanel({ user }: AdminPanelProps) {
             setError(err instanceof Error ? err.message : "Failed to load data")
         } finally {
             setLoading(false)
-        }
-    }
-
-    async function refreshAllData() {
-        try {
-            const [requestsResponse, usersResponse] = await Promise.all([getAccessRequestsApi(), getAllUsersApi()])
-            setRequests(requestsResponse.requests)
-            setUsers(usersResponse.users)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to refresh data")
         }
     }
 
@@ -223,7 +213,6 @@ export function AdminPanel({ user }: AdminPanelProps) {
         confirmAction?.type === "delete-user"
             ? "This permanently removes the user and their linked data. This cannot be undone. Click confirm only if you are sure."
             : "This immediately removes access to RevOpsly without deleting the account. Click confirm only if you are sure."
-    const confirmActionLabel = confirmAction?.type === "delete-user" ? "Delete user" : "Stop access"
     const confirmUser = confirmAction?.user ?? null
     const isConfirmBusy = confirmUser ? processingUserAction.has(confirmUser.id) : false
 

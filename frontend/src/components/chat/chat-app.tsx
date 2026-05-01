@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { format } from "date-fns"
+import Image from "next/image"
 import Papa from "papaparse"
 import { AnimatePresence, motion } from "framer-motion"
 import { useForm } from "react-hook-form"
@@ -22,7 +23,6 @@ import {
     Grid2x2,
     FileSpreadsheet,
     FolderSearch,
-    Hash,
     Paperclip,
     KeyRound,
     LifeBuoy,
@@ -610,11 +610,12 @@ function MessageRow({
                                     window.open(reportUrl, "_blank", "noopener,noreferrer")
                                 }}
                             >
-                                <img
+                                <Image
                                     src={reportUrl}
                                     alt={reportFile.name || "Generated plot"}
+                                    width={500}
+                                    height={280}
                                     className="max-h-[280px] w-full rounded-lg border border-border/70 object-contain bg-card"
-                                    loading="lazy"
                                 />
                             </button>
                         ) : null}
@@ -1196,7 +1197,7 @@ export function ChatApp() {
                         className="justify-center gap-1.5"
                         onClick={() => setActiveWorkspace("gworkspace")}
                     >
-                        <img src="/google-logo.svg" alt="Google" className="h-3.5 w-3.5" />
+                        <Image src="/google-logo.svg" alt="Google" width={14} height={14} />
                         Google
                     </Button>
                     <Button
@@ -1207,7 +1208,7 @@ export function ChatApp() {
                         onClick={() => setActiveWorkspace("slack")}
                         title="Slack Workspace"
                     >
-                        <img src="/slack-logo.png" alt="Slack" className="h-3.5 w-3.5" />
+                        <Image src="/slack-logo.png" alt="Slack" width={14} height={14} />
                     </Button>
                 </div>
             </div>
@@ -1428,10 +1429,11 @@ export function ChatApp() {
                         aria-label="Open RevOpsly website"
                         title="RevOpsly"
                     >
-                        <img
+                        <Image
                             src="/revopsly-logo.svg"
                             alt="RevOpsly logo"
-                            className="h-6 w-auto"
+                            width={24}
+                            height={24}
                         />
                     </a>
 

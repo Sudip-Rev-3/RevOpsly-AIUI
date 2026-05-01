@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import Image from "next/image"
 import { format } from "date-fns"
 import { Loader2, MessageSquarePlus, Send } from "lucide-react"
 
@@ -161,7 +162,7 @@ export function SlackInlinePanel() {
     if (!connected) {
         return (
             <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-                <img src="/slack-logo.png" alt="Slack" className="h-12 w-12 mb-4 opacity-50" />
+                <Image src="/slack-logo.png" alt="Slack" width={48} height={48} className="mb-4 opacity-50" />
                 <h2 className="text-lg font-semibold">Connect Slack</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Authorize Slack to get started with workspace chat.</p>
                 {authError && (
@@ -191,7 +192,7 @@ export function SlackInlinePanel() {
             <div className="border-b px-4 py-3 sm:px-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/slack-logo.png" alt="Slack" className="h-5 w-5" />
+                        <Image src="/slack-logo.png" alt="Slack" width={20} height={20} />
                         <div>
                             <h2 className="text-sm font-semibold">Slack Chat</h2>
                             <p className="text-xs text-muted-foreground">Workspace messages and search</p>

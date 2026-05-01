@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuthStore } from "@/store/auth-store"
@@ -79,7 +79,7 @@ export function AccessPendingScreen({ user }: AccessPendingScreenProps) {
                         ) : (
                             <ul className="mt-2 list-inside list-disc space-y-1">
                                 <li>An admin will review your request</li>
-                                <li>You'll be notified once approved</li>
+                                <li>You&apos;ll be notified once approved</li>
                                 <li>Please check back later or look for an email notification</li>
                             </ul>
                         )}
